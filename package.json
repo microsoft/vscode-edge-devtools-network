@@ -1,0 +1,438 @@
+{
+    "name": "network-edge-devtools",
+    "displayName": "Network for Microsoft Edge (Chromium)",
+    "description": "Use the Microsoft Edge (Chromium) Network tool from within Visual Studio Code to see your site's network requests",
+    "version": "1.0.0",
+    "license": "SEE LICENSE IN LICENSE",
+    "publisher": "ms-edgedevtools",
+    "preview": true,
+    "icon": "icon.png",
+    "extensionKind": "ui",
+    "author": {
+        "name": "Microsoft Corporation"
+    },
+    "homepage": "https://github.com/microsoft/vscode-edge-devtools-network/blob/master/README.md",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/microsoft/vscode-edge-devtools-network"
+    },
+    "galleryBanner": {
+        "color": "#5c2d91",
+        "theme": "dark"
+    },
+    "keywords": [
+        "browser",
+        "network"
+    ],
+    "engines": {
+        "vscode": "^1.36.0"
+    },
+    "categories": [
+        "Debuggers"
+    ],
+    "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
+    "main": "./out/extension",
+    "activationEvents": [
+        "onCommand:network-edge-devtools.attach",
+        "onCommand:network-edge-devtools.launch",
+        "onWebviewPanel:network-edge-devtools",
+        "onView:network-edge-devtools-view.targets",
+        "onDebug"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "network-edge-devtools.attach",
+                "title": "Attach to a target",
+                "category": "Network for Microsoft Edge"
+            },
+            {
+                "command": "network-edge-devtools.launch",
+                "title": "Launch Edge and then attach to a target",
+                "category": "Network for Microsoft Edge"
+            },
+            {
+                "command": "network-edge-devtools-view.launch",
+                "category": "Network for Microsoft Edge",
+                "title": "Open a new tab",
+                "icon": {
+                    "light": "resources/light/launch.svg",
+                    "dark": "resources/dark/launch.svg"
+                }
+            },
+            {
+                "command": "network-edge-devtools-view.refresh",
+                "category": "Network for Microsoft Edge",
+                "title": "Refresh Targets",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
+            },
+            {
+                "command": "network-edge-devtools-view.attach",
+                "category": "Network for Microsoft Edge",
+                "title": "Attach and open Network",
+                "icon": {
+                    "light": "resources/light/attach.svg",
+                    "dark": "resources/dark/attach.svg"
+                }
+            },
+            {
+                "command": "network-edge-devtools-view.copyItem",
+                "category": "Network for Microsoft Edge",
+                "title": "Copy Value"
+            }
+        ],
+        "configuration": {
+            "title": "Network for Microsoft Edge",
+            "type": "object",
+            "properties": {
+                "network-edge-devtools.browserPath": {
+                    "type": "string",
+                    "default": null,
+                    "description": "The path to the browser to use, rather than searching for the default"
+                },
+                "network-edge-devtools.hostname": {
+                    "type": "string",
+                    "default": "localhost",
+                    "description": "The hostname on which to search for remote debuggable instances"
+                },
+                "network-edge-devtools.port": {
+                    "type": "number",
+                    "default": 9222,
+                    "description": "The port on which to search for remote debuggable instances"
+                },
+                "network-edge-devtools.useHttps": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should we request the remote target list using https rather than http"
+                },
+                "network-edge-devtools.defaultUrl": {
+                    "type": "string",
+                    "default": "about:blank",
+                    "description": "The default url to open when launching the browser without a target"
+                },
+                "network-edge-devtools.userDataDir": {
+                    "type": [
+                        "string",
+                        "boolean"
+                    ],
+                    "default": true,
+                    "description": "By default, Microsoft Edge is launched with a separate user profile in a temp folder. Use this option to override the path. You can also set to false to launch with your default user profile instead."
+                },
+                "network-edge-devtools.webRoot": {
+                    "type": "string",
+                    "description": "The absolute path to the webserver root. Used to resolve paths like `/app.js` to files on disk",
+                    "default": "${workspaceFolder}"
+                },
+                "network-edge-devtools.pathMapping": {
+                    "type": "object",
+                    "default": {
+                        "/": "${workspaceFolder}"
+                    },
+                    "description": "A set of mappings for rewriting the locations of source files from what the sourcemap says, to their locations on disk"
+                },
+                "network-edge-devtools.sourceMapPathOverrides": {
+                    "type": "object",
+                    "description": "A set of mappings for rewriting the locations of source files from what the sourcemap says, to their locations on disk",
+                    "default": {
+                        "webpack:///./*": "${webRoot}/*",
+                        "webpack:///src/*": "${webRoot}/*",
+                        "webpack:///*": "*",
+                        "webpack:///./~/*": "${webRoot}/node_modules/*",
+                        "meteor://💻app/*": "${webRoot}/*"
+                    }
+                },
+                "network-edge-devtools.sourceMaps": {
+                    "type": "boolean",
+                    "description": "Use JavaScript source maps (if they exist)",
+                    "default": true
+                }
+            }
+        },
+        "debuggers": [
+            {
+                "type": "network-edge-devtools.debug",
+                "label": "Network for Microsoft Edge",
+                "configurationSnippets": [
+                    {
+                        "label": "Network for Microsoft Edge: Launch",
+                        "description": "Launch Microsoft Edge to a URL",
+                        "body": {
+                            "type": "network-edge-devtools.debug",
+                            "request": "launch",
+                            "name": "Launch Microsoft Edge and open the Network tool",
+                            "url": "http://localhost:8080",
+                            "webRoot": "^\"${2:\\${workspaceFolder\\}}\""
+                        }
+                    },
+                    {
+                        "label": "Network for Microsoft Edge: Attach",
+                        "description": "Attach to an instance of Microsoft Edge already in debug mode",
+                        "body": {
+                            "type": "network-edge-devtools.debug",
+                            "request": "attach",
+                            "name": "Attach to Microsoft Edge and open the Network tool",
+                            "url": "http://localhost:8080",
+                            "webRoot": "^\"${2:\\${workspaceFolder\\}}\""
+                        }
+                    }
+                ],
+                "configurationAttributes": {
+                    "launch": {
+                        "properties": {
+                            "url": {
+                                "type": "string",
+                                "description": "Absolute uri to launch",
+                                "default": "http://localhost:8080"
+                            },
+                            "file": {
+                                "type": "string",
+                                "description": "File path to launch",
+                                "default": "${workspaceFolder}/index.html"
+                            },
+                            "browserPath": {
+                                "type": "string",
+                                "description": "Absolute path to the browser instance to launch",
+                                "default": ""
+                            },
+                            "hostname": {
+                                "type": "string",
+                                "default": "localhost",
+                                "description": "The hostname on which to search for remote debuggable instances"
+                            },
+                            "port": {
+                                "type": "number",
+                                "default": 9222,
+                                "description": "The port on which to search for remote debuggable instances"
+                            },
+                            "userDataDir": {
+                                "type": [
+                                    "string",
+                                    "boolean"
+                                ],
+                                "description": "By default, Microsoft Edge is launched with a separate user profile in a temp folder. Use this option to override the path. You can also set to false to launch with your default user profile instead.",
+                                "default": true
+                            },
+                            "useHttps": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Should we request the remote target list using https rather than http"
+                            },
+                            "webRoot": {
+                                "type": "string",
+                                "description": "The absolute path to the webserver root. Used to resolve paths like `/app.js` to files on disk",
+                                "default": "${workspaceFolder}"
+                            },
+                            "pathMapping": {
+                                "type": "object",
+                                "description": "A mapping of URLs/paths to local folders, to resolve scripts in Microsoft Edge to scripts on disk",
+                                "default": {
+                                    "/": "${workspaceFolder}"
+                                }
+                            },
+                            "sourceMapPathOverrides": {
+                                "type": "object",
+                                "description": "A set of mappings for rewriting the locations of source files from what the sourcemap says, to their locations on disk",
+                                "default": {
+                                    "webpack:///./*": "${webRoot}/*",
+                                    "webpack:///src/*": "${webRoot}/*",
+                                    "webpack:///*": "*",
+                                    "webpack:///./~/*": "${webRoot}/node_modules/*",
+                                    "meteor://💻app/*": "${webRoot}/*"
+                                }
+                            },
+                            "sourceMaps": {
+                                "type": "boolean",
+                                "description": "Use JavaScript source maps (if they exist)",
+                                "default": true
+                            }
+                        }
+                    },
+                    "attach": {
+                        "properties": {
+                            "url": {
+                                "type": "string",
+                                "description": "Absolute uri to launch.",
+                                "default": "http://localhost:8080"
+                            },
+                            "file": {
+                                "type": "string",
+                                "description": "File path to launch.",
+                                "default": "${workspaceFolder}/index.html"
+                            },
+                            "browserPath": {
+                                "type": "string",
+                                "description": "Absolute path to the browser instance to launch.",
+                                "default": ""
+                            },
+                            "hostname": {
+                                "type": "string",
+                                "default": "localhost",
+                                "description": "The hostname on which to search for remote debuggable instances"
+                            },
+                            "port": {
+                                "type": "number",
+                                "default": 9222,
+                                "description": "The port on which to search for remote debuggable instances"
+                            },
+                            "userDataDir": {
+                                "type": [
+                                    "string",
+                                    "boolean"
+                                ],
+                                "description": "By default, Microsoft Edge is launched with a separate user profile in a temp folder. Use this option to override the path. You can also set to false to launch with your default user profile instead.",
+                                "default": true
+                            },
+                            "useHttps": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Should we request the remote target list using https rather than http"
+                            },
+                            "webRoot": {
+                                "type": "string",
+                                "description": "The absolute path to the webserver root. Used to resolve paths like `/app.js` to files on disk",
+                                "default": "${workspaceFolder}"
+                            },
+                            "pathMapping": {
+                                "type": "object",
+                                "description": "A mapping of URLs/paths to local folders, to resolve scripts in Microsoft Edge to scripts on disk",
+                                "default": {
+                                    "/": "${workspaceFolder}"
+                                }
+                            },
+                            "sourceMapPathOverrides": {
+                                "type": "object",
+                                "description": "A set of mappings for rewriting the locations of source files from what the sourcemap says, to their locations on disk",
+                                "default": {
+                                    "webpack:///./*": "${webRoot}/*",
+                                    "webpack:///src/*": "${webRoot}/*",
+                                    "webpack:///*": "*",
+                                    "webpack:///./~/*": "${webRoot}/node_modules/*",
+                                    "meteor://💻app/*": "${webRoot}/*"
+                                }
+                            },
+                            "sourceMaps": {
+                                "type": "boolean",
+                                "description": "Use JavaScript source maps (if they exist)",
+                                "default": true
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "network-edge-devtools-view.attach",
+                    "when": "view == network-edge-devtools-view.targets && viewItem == cdpTarget"
+                },
+                {
+                    "command": "network-edge-devtools-view.launch",
+                    "when": "view == network-edge-devtools-view.targets"
+                },
+                {
+                    "command": "network-edge-devtools-view.refresh",
+                    "when": "view == network-edge-devtools-view.targets"
+                },
+                {
+                    "command": "network-edge-devtools-view.copyItem",
+                    "when": "view == network-edge-devtools-view.targets && viewItem == cdpTargetProperty"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "network-edge-devtools-view.launch",
+                    "when": "view == network-edge-devtools-view.targets",
+                    "group": "navigation"
+                },
+                {
+                    "command": "network-edge-devtools-view.refresh",
+                    "when": "view == network-edge-devtools-view.targets",
+                    "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "network-edge-devtools-view.attach",
+                    "when": "view == network-edge-devtools-view.targets && viewItem == cdpTarget",
+                    "group": "inline"
+                },
+                {
+                    "command": "network-edge-devtools-view.copyItem",
+                    "when": "view == network-edge-devtools-view.targets && viewItem == cdpTargetProperty",
+                    "group": "2_contextMenu"
+                }
+            ]
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "network-edge-devtools-view",
+                    "title": "Network for Microsoft Edge",
+                    "icon": "resources/viewIcon.svg"
+                }
+            ]
+        },
+        "views": {
+            "network-edge-devtools-view": [
+                {
+                    "id": "network-edge-devtools-view.targets",
+                    "name": "Targets"
+                }
+            ]
+        }
+    },
+    "jest": {
+        "transform": {
+            "^.+\\.tsx?$": "ts-jest"
+        },
+        "testRegex": "/src/.+\\.test\\.tsx?$",
+        "moduleFileExtensions": [
+            "ts",
+            "tsx",
+            "js",
+            "jsx",
+            "json",
+            "node"
+        ]
+    },
+    "scripts": {
+        "package": "vsce package --out network-edge-devtools.vsix",
+        "vscode:prepublish": "npm run build-and-lint",
+        "build": "npm run build-wp && npm run build-post",
+        "build-wp": "webpack",
+        "build-post": "ts-node postBuildStep.ts",
+        "build-watch": "npm run build && npm run watch",
+        "build-and-lint": "npm run build && npm run lint",
+        "watch": "npm run watch-wp",
+        "watch-wp": "webpack --watch",
+        "lint": "tslint -c tslint.json -p tsconfig.json",
+        "test": "npm run lint && jest --coverage"
+    },
+    "dependencies": {
+        "vscode-chrome-debug-core": "6.7.51",
+        "vscode-extension-telemetry": "0.1.1",
+        "ws": "7.1.0"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "8.0.0",
+        "@types/jest": "24.0.15",
+        "@types/node": "12.6.8",
+        "@types/ws": "6.0.1",
+        "@types/vscode": "1.36.0",
+        "fs-extra": "8.1.0",
+        "jest": "24.8.0",
+        "ts-jest": "24.0.2",
+        "ts-loader": "6.0.4",
+        "ts-node": "8.3.0",
+        "tslint": "5.18.0",
+        "typescript": "3.5.3",
+        "vsce": "1.65.0",
+        "vscode-test": "1.0.2",
+        "webpack": "4.36.1",
+        "webpack-cli": "3.3.6"
+    }
+}
