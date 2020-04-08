@@ -20,8 +20,6 @@ async function copyFile(srcDir: string, outDir: string, name: string) {
 }
 
 async function copyStaticFiles(debugMode: boolean) {
-    // Copy the static html file to the out directory
-
     // Copy the static css file to the out directory
     const commonSrcDir = "./src/common/";
     const commonOutDir = "./out/common/";

@@ -1,58 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import ToolsHost from "../toolsHost";
-
-declare var InspectorFrontendHost: ToolsHost;
-
-interface IRevealable {
-    lineNumber: number;
-    columnNumber: number;
-    uiSourceCode: {
-        _url: string;
-    };
-}
-
-export function revealInVSCode(revealable: IRevealable | undefined, omitFocus: boolean) {
-    if (revealable && revealable.uiSourceCode && revealable.uiSourceCode._url) {
-        InspectorFrontendHost.openInEditor(
-            revealable.uiSourceCode._url,
-            revealable.lineNumber,
-            revealable.columnNumber,
-            omitFocus,
-        );
-    }
-
-    return Promise.resolve();
-}
-
-export function applyCommonRevealerPatch(content: string) {
-    const pattern = /Common\.Revealer\.reveal\s*=\s*function\(revealable,\s*omitFocus\)\s*{/g;
-    if (content.match(pattern)) {
-        return content.replace(pattern, `Common.Revealer.reveal = ${revealInVSCode.toString().slice(0, -1)}`);
-    } else {
-        return null;
-    }
-}
-
-export function applyInspectorViewPatch(content: string) {
-    const pattern = /handleAction\(context,\s*actionId\)\s*{/g;
-    if (content.match(pattern)) {
-        return content.replace(pattern, 'handleAction(context, actionId) { return false;');
-    } else {
-        return null;
-    }
-}
-
-export function applyMainViewPatch(content: string) {
-    const pattern = /const moreTools\s*=\s*[^;]+;/g;
-    if (content.match(pattern)) {
-        return content.replace(pattern, 'const moreTools = { defaultSection: () => ({ appendItem: () => {} }) };');
-    } else {
-        return null;
-    }
-}
-
 export function applySelectTabPatch(content: string) {
     const networkTabs = [
         "network",
