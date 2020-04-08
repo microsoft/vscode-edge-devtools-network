@@ -19,7 +19,7 @@ async function copyFile(srcDir: string, outDir: string, name: string) {
     );
 }
 
-async function copyStaticFiles() {
+async function copyStaticFiles(debugMode: boolean) {
     // Copy the static html file to the out directory
 
     // Copy the static css file to the out directory
@@ -65,38 +65,43 @@ async function copyStaticFiles() {
     }
 
     // Patch older versions of the webview with our workarounds
-    await patchFilesForWebView(toolsOutDir);
+    await patchFilesForWebView(toolsOutDir, debugMode);
 }
 
-async function patchFilesForWebView(toolsOutDir: string) {
-    // Release file versions
-    await patchFileForWebView("shell.js", toolsOutDir, true, [
-        applyInspectorCommonCssPatch,
-        applySelectTabPatch,
+async function patchFilesForWebView(toolsOutDir: string, debugMode: boolean) {
+    if (!debugMode) {
+      // tslint:disable-next-line:no-console
+      console.log('Patching files for release version');
+      await patchFileForWebView("shell.js", toolsOutDir, true, [
+        applyInspectorCommonCssPatch
+      ]);
+      await patchFileForWebView("inspector.html", toolsOutDir, true, [applyContentSecurityPolicyPatch]);
+      await patchFileForWebView("ui/TabbedPane.js", toolsOutDir, false, [applySelectTabPatch, applyShowTabElement]);
+      await patchFileForWebView("ui/InspectorView.js", toolsOutDir, false, [
         applyDrawerTabLocationPatch,
         applyMainTabTabLocationPatch,
-        applyShowTabElement,
-    ]);
-    await patchFileForWebView("inspector.html", toolsOutDir, true, [applyContentSecurityPolicyPatch]);
-
-    // Debug file versions
-    await patchFileForWebView("ui/TabbedPane.js", toolsOutDir, false, [applySelectTabPatch, applyShowTabElement]);
-    await patchFileForWebView("ui/InspectorView.js", toolsOutDir, false, [
+      ]);
+    } else {
+      await patchFileForWebView("inspector.html", toolsOutDir, true, [applyContentSecurityPolicyPatch]);
+      await patchFileForWebView("ui/TabbedPane.js", toolsOutDir, false, [applySelectTabPatch, applyShowTabElement]);
+      await patchFileForWebView("ui/InspectorView.js", toolsOutDir, false, [
         applyDrawerTabLocationPatch,
         applyMainTabTabLocationPatch,
-    ]);
+      ]);
+    }
 }
 
 async function patchFileForWebView(
     filename: string,
     dir: string,
     isRelease: boolean,
-    patches: Array<(content: string, isRelease?: boolean) => string>) {
+    patches: Array<(content: string, isRelease?: boolean) => string | null>) {
     const file = path.join(dir, filename);
 
     // Ignore missing files
     if (!await fse.pathExists(file)) {
-        return;
+        const template = `An expected file was not found: ${file}`;
+        throw new Error(template);
     }
 
     // Read in the file
@@ -104,7 +109,13 @@ async function patchFileForWebView(
 
     // Apply each patch in order
     patches.forEach((patchFunction) => {
-        content = patchFunction(content, isRelease);
+        const patchResult: string | null = patchFunction(content, isRelease);
+        if (patchResult) {
+            content = patchResult;
+        } else {
+            const template = `An expected function was not patched correctly: ${patchFunction} on file: ${filename}`;
+            throw new Error(template);
+        }
     });
 
     // Write out the final content
@@ -119,4 +130,13 @@ function isDirectory(fullPath: string) {
     }
 }
 
-copyStaticFiles();
+function main() {
+  let debugMode = false;
+  if (process.argv && process.argv.length === 3 && process.argv[2] === "debug") {
+      debugMode = true;
+  }
+
+  copyStaticFiles(debugMode);
+}
+
+main();
