@@ -1,50 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import ToolsHost from "../toolsHost";
-
-declare var InspectorFrontendHost: ToolsHost;
-
-interface IRevealable {
-    lineNumber: number;
-    columnNumber: number;
-    uiSourceCode: {
-        _url: string;
-    };
-}
-
-export function revealInVSCode(revealable: IRevealable | undefined, omitFocus: boolean) {
-    if (revealable && revealable.uiSourceCode && revealable.uiSourceCode._url) {
-        InspectorFrontendHost.openInEditor(
-            revealable.uiSourceCode._url,
-            revealable.lineNumber,
-            revealable.columnNumber,
-            omitFocus,
-        );
-    }
-
-    return Promise.resolve();
-}
-
-export function applyCommonRevealerPatch(content: string) {
-    return content.replace(
-        /Common\.Revealer\.reveal\s*=\s*function\(revealable,\s*omitFocus\)\s*{/g,
-        `Common.Revealer.reveal = ${revealInVSCode.toString().slice(0, -1)}`);
-}
-
-export function applyInspectorViewPatch(content: string) {
-    return content
-        .replace(
-            /handleAction\(context,\s*actionId\)\s*{/g,
-            "handleAction(context, actionId) { return false;");
-}
-
-export function applyMainViewPatch(content: string) {
-    return content.replace(
-        /const moreTools\s*=\s*[^;]+;/g,
-        "const moreTools = { defaultSection: () => ({ appendItem: () => {} }) };");
-}
-
 export function applySelectTabPatch(content: string) {
     const networkTabs = [
         "network",
@@ -72,9 +28,12 @@ export function applySelectTabPatch(content: string) {
         return `id !== '${tab}'`;
     }).join(" && ");
 
-    return content.replace(
-        /selectTab\(id,\s*userGesture,\s*forceFocus\)\s*{/g,
-        `selectTab\(id, userGesture, forceFocus\) { if (${condition}) return false;`);
+    const pattern = /selectTab\(id,\s*userGesture,\s*forceFocus\)\s*{/g;
+    if (content.match(pattern)) {
+        return content.replace(pattern, `selectTab\(id, userGesture, forceFocus\) { if (${condition}) return false;`);
+    } else {
+        return null;
+    }
 }
 
 export function applyShowTabElement(content: string) {
@@ -104,21 +63,30 @@ export function applyShowTabElement(content: string) {
         return `tab._id !== '${tab}'`;
     }).join(" && ");
 
-    return content.replace(
-        /_showTabElement\(index,\s*tab\)\s*{/g,
-        `_showTabElement\(index, tab\) { if (${condition}) return false;`);
+    const pattern = /_showTabElement\(index,\s*tab\)\s*{/g;
+    if (content.match(pattern)) {
+        return content.replace(pattern, `_showTabElement\(index, tab\) { if (${condition}) return false;`);
+    } else {
+        return null;
+    }
 }
 
 export function applyDrawerTabLocationPatch(content: string) {
-    return content.replace(
-        /this._showDrawer.bind\s*\(this,\s*false\),\s*'drawer-view',\s*true,\s*true/g,
-        `this._showDrawer.bind\(this, false\), 'drawer-view', true, true, 'network.blocked-urls'`);
+    const pattern = /this._showDrawer.bind\s*\(this,\s*false\),\s*'drawer-view',\s*true,\s*true/g;
+    if (content.match(pattern)) {
+        return content.replace(pattern, `this._showDrawer.bind\(this, false\), 'drawer-view', true, true, 'network.blocked-urls'`);
+    } else {
+        return null;
+    }
 }
 
 export function applyMainTabTabLocationPatch(content: string) {
-    return content.replace(
-        /InspectorFrontendHostInstance\),\s*'panel',\s*true,\s*true,\s*Root.Runtime.queryParam\('panel'\)/g,
-        `InspectorFrontendHostInstance\), 'panel', true, true, 'network'`);
+    const pattern = /InspectorFrontendHostInstance\),\s*'panel',\s*true,\s*true,\s*Root.Runtime.queryParam\('panel'\)/g;
+    if (content.match(pattern)) {
+        return content.replace(pattern, `InspectorFrontendHostInstance\), 'panel', true, true, 'network'`);
+    } else {
+        return null;
+    }
 }
 
 export function applyInspectorCommonCssPatch(content: string, isRelease?: boolean) {
@@ -182,17 +150,23 @@ export function applyInspectorCommonCssPatch(content: string, isRelease?: boolea
         drawerCSS +
         networkCSS;
 
-    let result = content.replace(
-        /(:host-context\(\.platform-mac\)\s*\.monospace,)/g,
-        `${addCSS}${separator} $1`);
+    let result;
+    const pattern = /(:host-context\(\.platform-mac\)\s*\.monospace,)/g
+    if (content.match(pattern)) {
+        result = content.replace(pattern, `${addCSS}${separator} $1`);
+    } else {
+        return null;
+    }
 
     const replaceFocusTabSlider =
         `.tabbed-pane-tab-slider .enabled {
             display: none !important;
         }`.replace(/\n/g, separator);
 
-    result = result.replace(
-        /(\.tabbed-pane-tab-slider\s*\.enabled\s*\{([^\}]*)?\})/g,
-        replaceFocusTabSlider);
-    return result;
+    const tabbedPanePattern = /(\.tabbed-pane-tab-slider\s*\.enabled\s*\{([^\}]*)?\})/g;
+    if (result.match(tabbedPanePattern)) {
+        return result.replace(tabbedPanePattern, replaceFocusTabSlider);
+    } else {
+        return null;
+    }
 }
